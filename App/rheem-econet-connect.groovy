@@ -19,7 +19,10 @@ definition(
     namespace: "bspranger",
     author: "Brian Spranger",
     description: "Connect to Rheem EcoNet",
-    category: "SmartThings Labs")
+    category: "SmartThings Labs",
+    iconUrl: "http://smartthings.copyninja.net/icons/Rheem_EcoNet@1x.png",
+    iconX2Url: "http://smartthings.copyninja.net/icons/Rheem_EcoNet@2x.png",
+    iconX3Url: "http://smartthings.copyninja.net/icons/Rheem_EcoNet@3x.png")
 
 
 preferences {
