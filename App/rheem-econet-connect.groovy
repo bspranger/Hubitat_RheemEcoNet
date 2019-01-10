@@ -44,7 +44,7 @@ def prefLogIn() {
 			input("password", "password", title: "Password", description: "Rheem EcoNet password (case sensitive)")
 		} 
 		section("Advanced Options"){
-			input(name: "polling", title: "Server Polling (in Minutes)", type: "int", description: "in minutes", defaultValue: "5" )
+			input "isDebugEnabled", "bool", title: "Enable Debugging?", defaultValue: false
 		}
 	}
 }
@@ -87,9 +87,7 @@ def uninstalled() {
 }
 
 def initialize() {
-	// Set initial states
-	state.polling = [ last: 0, rescheduler: now() ]  
-	    
+
 	// Create selected devices
 	def waterHeaterList = getWaterHeaterList()
     def selectedDevices = [] + getSelectedDevices("waterheater")
@@ -100,15 +98,11 @@ def initialize() {
 	        try {
     			addChildDevice("bspranger", "Rheem Econet Water Heater", it, null, ["name": "Rheem Econet: " + name])
     	    } catch (e)	{
-				log.debug "addChildDevice Error: $e"
+				logDebug "addChildDevice Error: $e"
           	}
         }
     }
     
-	// Remove unselected devices
-	/*def deleteDevices = (selectedDevices) ? (getChildDevices().findAll { !selectedDevices.contains(it.deviceNetworkId) }) : getAllChildDevices()
-	deleteDevices.each { deleteChildDevice(it.deviceNetworkId) } */
-	    
 	//Refresh devices
 	refresh()
 	runEvery1Minute(refresh)
@@ -143,14 +137,14 @@ def refresh() {
     	return
     }
     
-	log.debug "Refreshing data..."
+	logDebug "Refreshing data..."
 
 	// get all the children and send updates
 	getChildDevices().each {
     	def id = it.deviceNetworkId
     	apiGet("/equipment/$id", [] ) { response ->
     		if (response.status == 200) {
-            	log.debug "Got data: $response.data"
+            	logDebug "Got data: $response.data"
             	it.updateDeviceData(response.data)
             }
         }
@@ -158,7 +152,7 @@ def refresh() {
 }
 
 def setDeviceSetPoint(childDevice, setpoint) { 
-	log.debug "setDeviceSetPoint: $childDevice.deviceNetworkId $setpoint" 
+	logDebug "setDeviceSetPoint: $childDevice.deviceNetworkId $setpoint" 
 	if (login()) {
     	apiPut("/equipment/$childDevice.deviceNetworkId", [
         	body: [
@@ -169,7 +163,7 @@ def setDeviceSetPoint(childDevice, setpoint) {
 
 }
 def setDeviceEnabled(childDevice, enabled) {
-	log.debug "setDeviceEnabled: $childDevice.deviceNetworkId $enabled" 
+	logDebug "setDeviceEnabled: $childDevice.deviceNetworkId $enabled" 
 	if (login()) {
     	apiPut("/equipment/$childDevice.deviceNetworkId", [
         	body: [
@@ -179,7 +173,7 @@ def setDeviceEnabled(childDevice, enabled) {
     }
 }
 def setDeviceMode(childDevice, mode) {
-	log.debug "setDeviceEnabled: $childDevice.deviceNetworkId $enabled" 
+	logDebug "setDeviceEnabled: $childDevice.deviceNetworkId $enabled" 
 	if (login()) {
     	apiPut("/equipment/$childDevice.deviceNetworkId/modes", [
         	body: [
@@ -189,7 +183,7 @@ def setDeviceMode(childDevice, mode) {
     }
 }
 def setDeviceOnVacation(childDevice, OnVacation) {
-	log.debug "setDeviceOnVacation: $childDevice.deviceNetworkId $OnVacation" 
+	logDebug "setDeviceOnVacation: $childDevice.deviceNetworkId $OnVacation" 
 	if (login()) {
     	apiPut("/equipment/$childDevice.deviceNetworkId", [
         	body: [
@@ -215,7 +209,7 @@ private login() {
     	try {
 			httpPost(apiParams) { response -> 
             	if (response.status == 200) {
-                	log.debug "Login good!"
+                	logDebug "Login good!"
                 	state.session = [ 
                     	accessToken: response.data.access_token,
                     	refreshToken: response.data.refresh_token,
@@ -227,7 +221,7 @@ private login() {
             	} 	
         	}
 		}	catch (e)	{
-			log.debug "API Error: $e"
+			logDebug "API Error: $e"
         	return false
 		}
 	} else { 
@@ -246,13 +240,13 @@ private apiGet(apiPath, apiParams = [], callback = {}) {
         headers: ["Authorization": getApiAuth()],
         requestContentType: "application/json",
 	] + apiParams
-	log.debug "GET: $apiParams"
+	logDebug "GET: $apiParams"
 	try {
 		httpGet(apiParams) { response -> 
         	callback(response)
         }
 	}	catch (e)	{
-		log.debug "API Error: $e"
+		logDebug "API Error: $e"
 	}
 }
 
@@ -265,13 +259,13 @@ private apiPut(apiPath, apiParams = [], callback = {}) {
         headers: ["Authorization": getApiAuth()],
         requestContentType: "application/json",
 	] + apiParams
-	log.debug "apiPut: $apiParams"
+	logDebug "apiPut: $apiParams"
 	try {
 		httpPut(apiParams) { response -> 
         	callback(response)
         }
 	}	catch (e)	{
-		log.debug "API Error: $e"
+		logDebug "API Error: $e"
 	}
 }
 
@@ -281,4 +275,10 @@ private getApiURL() {
     
 private getApiAuth() {
 	return "Bearer " + state.session?.accessToken
+}
+
+private logDebug(msg) {
+	if (isDebugEnabled != false) {
+		log.debug "$msg"
+	}
 }
