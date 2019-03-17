@@ -25,12 +25,12 @@ metadata {
 		capability "Actuator"
 		capability "Refresh"
 		capability "Sensor"
-		capability "Thermostat Heating Setpoint"
-        capability "Temperature Measurement"
+		capability "ThermostatHeatingSetpoint"
+        capability "TemperatureMeasurement"
+		capability "ThermostatSetpoint"
 		
 		command "heatLevelUp"
 		command "heatLevelDown"
-        command "togglevacation"
         command "RequestEnergySave"
         command "RequestHighDemand"
         command "RequestOff"
@@ -51,11 +51,17 @@ def refresh() {
 	parent.refresh()
 }
 
+def setCoolingSetpoint(Number setPoint) {
+    /* does not support cooling, but the thermostat capability does */
+}
+
 def setHeatingSetpoint(Number setPoint) {
 	/*heatingSetPoint = (heatingSetPoint < deviceData.minTemp)? deviceData.minTemp : heatingSetPoint
 	heatingSetPoint = (heatingSetPoint > deviceData.maxTemp)? deviceData.maxTemp : heatingSetPoint
     */
    	sendEvent(name: "heatingSetpoint", value: setPoint, unit: "F")
+	sendEvent(name: "thermostatSetpoint", value: setPoint, unit: "F")
+	 
 	parent.setDeviceSetPoint(this.device, setPoint)
     refresh()
 }
@@ -72,27 +78,45 @@ def heatLevelDown() {
     setHeatingSetpoint(setPoint)
 }
 
+def auto()          { RequestEnergySave() }
+def cool()          {  }
+def emergencyHeat() { RequestHighDemand() }
+def heat()          { RequestHeatPumpOnly() }
+def off()           { RequestOff() }
+
+
 def RequestEnergySave(){
+	logDebug("Requesting Energy Saver Mode")
 	parent.setDeviceMode(this.device, "Energy Saver")
     parent.refresh()
 }
 
 def RequestHighDemand(){
+	logDebug("Requesting High Demand Mode")
 	parent.setDeviceMode(this.device, "High Demand")
     parent.refresh()
 }
 def RequestOff(){
+	logDebug("Requesting Off")
 	parent.setDeviceMode(this.device, "Off")
     parent.refresh()
 }
 def RequestHeatPumpOnly(){
+	logDebug("Requesting Heat Pump Only")
 	parent.setDeviceMode(this.device, "Heat Pump Only")
     parent.refresh()
 }
 def RequestElectricOnly(){
+	logDebug("Requesting Electric Only")
 	parent.setDeviceMode(this.device, "Electric-Only")
     parent.refresh()
 }
+
+/* the Thermostat Capability supports Fan modes, but the water heater does not */
+def fanAuto()      {  }
+def fanCirculate() {  }
+def fanOn()        {  }
+def fanOff()       {  }
 
 def updateDeviceData(data) {
     sendEvent(name: "heatingSetpoint", value: data.setPoint, unit: "F")
