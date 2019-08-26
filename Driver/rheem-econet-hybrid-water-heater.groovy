@@ -15,7 +15,7 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Last Updated : 01-05-2019 by Brian Spranger
+ *  Last Updated : 08-26-2019 by Brian Spranger
  *
  *  Based on https://github.com/copy-ninja/SmartThings_RheemEcoNet
  */
@@ -66,6 +66,40 @@ def setHeatingSetpoint(Number setPoint) {
     refresh()
 }
 
+def setSchedule() {
+    /* does not support setSchedule, but the thermostat capability does */
+}
+
+def setThermostatFanMode() {
+    /* does not support setThermostatFanMode, but the thermostat capability does */
+}
+
+def setThermostatMode(requestedMode) {
+    /* ENUM ["heat", "cool", "emergency heat", "auto", "off"] */
+    
+    logDebug("setThermostatMode: $requestedMode")
+    
+    switch (requestedMode) 
+    {
+    case "heat":
+        heat()
+        break
+    case "emergency heat":
+        emergencyHeat()
+        break
+    case "auto":
+        auto()
+        break
+    case "off":
+        off()
+        break
+    case "cool":
+    default:
+        /* do nothing - Not supported */
+        break
+    }  
+}
+
 def heatLevelUp() { 
 	def setPoint = device.currentValue("heatingSetpoint")
     setPoint = setPoint + 1
@@ -81,6 +115,9 @@ def heatLevelDown() {
 def auto()          { RequestEnergySave() }
 def cool()          {  }
 def emergencyHeat() { RequestHighDemand() }
+def fanAuto()      {  }
+def fanCirculate() {  }
+def fanOn()        {  }
 def heat()          { RequestHeatPumpOnly() }
 def off()           { RequestOff() }
 
@@ -111,12 +148,6 @@ def RequestElectricOnly(){
 	parent.setDeviceMode(this.device, "Electric-Only")
     parent.refresh()
 }
-
-/* the Thermostat Capability supports Fan modes, but the water heater does not */
-def fanAuto()      {  }
-def fanCirculate() {  }
-def fanOn()        {  }
-def fanOff()       {  }
 
 def updateDeviceData(data) {
     sendEvent(name: "heatingSetpoint", value: data.setPoint, unit: "F")

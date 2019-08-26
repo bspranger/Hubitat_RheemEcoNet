@@ -1,4 +1,4 @@
- /* Rheem EcoNet Connect
+/* Rheem EcoNet Connect
  *  
  *  Copyright 2017 Justin Huff
  *
