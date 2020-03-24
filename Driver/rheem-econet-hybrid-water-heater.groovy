@@ -1,165 +1,144 @@
+
+Rheem Econet Water Heater
+chat_bubble_outline
+more_vert
+
+Dashboards
+Devices
+Apps
+Settings
+Advanced
+codeApps Code
+codeDrivers Code
+System Events
+Logs
+Rheem Econet Water HeaterImport   HelpDeleteSave
+O
+1
 /**
+2
  *  Rheem Econet Hybrid Water Heater
+3
  *
+4
  *  Copyright 2017 Justin Huff
+5
  *
+6
  *  Github Link
+7
  *  https://raw.githubusercontent.com/bspranger/Hubitat_RheemEcoNet/master/Driver/rheem-econet-hybrid-water-heater.groovy
+8
  *
+9
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+10
  *  in compliance with the License. You may obtain a copy of the License at:
+11
  *
+12
  *      http://www.apache.org/licenses/LICENSE-2.0
+13
  *
+14
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+15
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+16
  *  for the specific language governing permissions and limitations under the License.
+17
  *
- *  Last Updated : 08-26-2019 by Brian Spranger
+18
+ *  Last Updated : 01-05-2019 by Brian Spranger
+19
  *
+20
  *  Based on https://github.com/copy-ninja/SmartThings_RheemEcoNet
+21
  */
+22
 metadata {
-	definition (name: "Rheem Econet Water Heater", namespace: "bspranger", author: "Brian Spranger") {
+23
+    definition (name: "Rheem Econet Water Heater", namespace: "bspranger", author: "Brian Spranger") {
+24
         capability "Thermostat"
-		capability "Actuator"
-		capability "Refresh"
-		capability "Sensor"
-		capability "ThermostatHeatingSetpoint"
+25
+        capability "ThermostatSetpoint"
+26
+        capability "Polling"
+27
+        capability "Refresh"
+28
+        capability "Sensor"
+29
         capability "TemperatureMeasurement"
-		capability "ThermostatSetpoint"
-		
-		command "heatLevelUp"
-		command "heatLevelDown"
+30
+        capability "Actuator"
+31
+        capability "ThermostatHeatingSetpoint"
+32
+        capability "ThermostatCoolingSetpoint"
+33
+        
+34
+        
+35
+        
+36
+        command "heatLevelUp"
+37
+        command "heatLevelDown"
+38
+        command "coolLevelUp"
+39
+        command "coolLevelDown"
+40
         command "RequestEnergySave"
+41
         command "RequestHighDemand"
+42
         command "RequestOff"
+43
         command "RequestHeatPumpOnly"
+44
         command "RequestElectricOnly"
-		command "updateDeviceData", ["string"]
-	}
-	
-	preferences {
-		input "isDebugEnabled", "bool", title: "Enable Debugging?", defaultValue: false
-	}
+45
+        command "away"
+46
+        command "present"
+47
+        command "updateDeviceData", ["string"]
+48
+    }
+49
+    
+50
+    preferences {
+51
+        input "isDebugEnabled", "bool", title: "Enable Debugging?", defaultValue: false
+52
+    }
+53
 }
-
+54
+​
+55
 def parse(String description) { }
-
+56
+​
+57
+def poll() {refresh()}
+58
+​
+59
 def refresh() {
-	logDebug "refresh"
-	parent.refresh()
-}
-
-def setCoolingSetpoint(Number setPoint) {
-    /* does not support cooling, but the thermostat capability does */
-}
-
-def setHeatingSetpoint(Number setPoint) {
-	/*heatingSetPoint = (heatingSetPoint < deviceData.minTemp)? deviceData.minTemp : heatingSetPoint
-	heatingSetPoint = (heatingSetPoint > deviceData.maxTemp)? deviceData.maxTemp : heatingSetPoint
-    */
-   	sendEvent(name: "heatingSetpoint", value: setPoint, unit: "F")
-	sendEvent(name: "thermostatSetpoint", value: setPoint, unit: "F")
-	 
-	parent.setDeviceSetPoint(this.device, setPoint)
-    refresh()
-}
-
-def setSchedule() {
-    /* does not support setSchedule, but the thermostat capability does */
-}
-
-def setThermostatFanMode() {
-    /* does not support setThermostatFanMode, but the thermostat capability does */
-}
-
-def setThermostatMode(requestedMode) {
-    /* ENUM ["heat", "cool", "emergency heat", "auto", "off"] */
-    
-    logDebug("setThermostatMode: $requestedMode")
-    
-    switch (requestedMode) 
-    {
-    case "heat":
-        heat()
-        break
-    case "emergency heat":
-        emergencyHeat()
-        break
-    case "auto":
-        auto()
-        break
-    case "off":
-        off()
-        break
-    case "cool":
-    default:
-        /* do nothing - Not supported */
-        break
-    }  
-}
-
-def heatLevelUp() { 
-	def setPoint = device.currentValue("heatingSetpoint")
-    setPoint = setPoint + 1
-	setHeatingSetpoint(setPoint)
-}	
-
-def heatLevelDown() { 
-	def setPoint = device.currentValue("heatingSetpoint")
-    setPoint = setPoint - 1
-    setHeatingSetpoint(setPoint)
-}
-
-def auto()          { RequestEnergySave() }
-def cool()          {  }
-def emergencyHeat() { RequestHighDemand() }
-def fanAuto()      {  }
-def fanCirculate() {  }
-def fanOn()        {  }
-def heat()          { RequestHeatPumpOnly() }
-def off()           { RequestOff() }
-
-
-def RequestEnergySave(){
-	logDebug("Requesting Energy Saver Mode")
-	parent.setDeviceMode(this.device, "Energy Saver")
-    parent.refresh()
-}
-
-def RequestHighDemand(){
-	logDebug("Requesting High Demand Mode")
-	parent.setDeviceMode(this.device, "High Demand")
-    parent.refresh()
-}
-def RequestOff(){
-	logDebug("Requesting Off")
-	parent.setDeviceMode(this.device, "Off")
-    parent.refresh()
-}
-def RequestHeatPumpOnly(){
-	logDebug("Requesting Heat Pump Only")
-	parent.setDeviceMode(this.device, "Heat Pump Only")
-    parent.refresh()
-}
-def RequestElectricOnly(){
-	logDebug("Requesting Electric Only")
-	parent.setDeviceMode(this.device, "Electric-Only")
-    parent.refresh()
-}
-
-def updateDeviceData(data) {
-    sendEvent(name: "heatingSetpoint", value: data.setPoint, unit: "F")
-    sendEvent(name: "thermostatOperatingState", value: data.inUse ? "heating" : "idle")
-    sendEvent(name: "thermostatMode", value: data.mode)
-    sendEvent(name: "lowerTemp", value: data.lowerTemp as Integer)
-    sendEvent(name: "ambientTemp", value: data.ambientTemp as Integer)
-    sendEvent(name: "temperature", value: data.upperTemp as Integer)
-}
-
-private logDebug(msg) {
-	if (isDebugEnabled != false) {
-		log.debug "$msg"
-	}
-}
+60
+    logDebug "refresh"
+61
+    def SupportedModes = ["auto", "off", "Energy Saver", "High Demand", "Heat Pump Only", "Electric-Only"]
+Location: HubitatHome
+Terms of Service
+Documentation
+Community
+Support
+Copyright 2019 Hubitat, Inc.
